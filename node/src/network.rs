@@ -1,0 +1,1 @@
+// network.rs — Network layer (Sprint 2, coming next)

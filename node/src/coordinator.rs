@@ -1,0 +1,1 @@
+// coordinator.rs — Job coordinator (Sprint 2, coming next)

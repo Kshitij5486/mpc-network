@@ -1,0 +1,1 @@
+// session.rs — Session management (Sprint 2, coming next)

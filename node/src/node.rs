@@ -1,0 +1,1 @@
+// node.rs — Node struct (Sprint 2, coming next)
