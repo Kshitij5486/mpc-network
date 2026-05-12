@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPC Network &mdash; Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0C0C0C;
+      --surface: #131313;
+      --surface2: #1A1A1A;
+      --border: #222222;
+      --border2: #2A2A2A;
+      --accent: #E5383B;
+      --accent2: #C0392B;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --text: #FFFFFF;
+      --text2: #888888;
+      --text3: #444444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    .nav {
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-right: 32px;
+      text-decoration: none;
+    }
+    .logo-icon { width: 26px; height: 26px; flex-shrink: 0; }
+    .logo-text {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+    .nav-tabs { display: flex; height: 100%; }
+    .nav-tab {
+      padding: 0 16px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      transition: all 0.15s;
+      font-family: var(--sans);
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+    .status-text { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+    .block-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    /* MAIN */
+    .main { flex: 1; overflow: auto; }
+    .panel { display: none; padding: 24px; }
+    .panel.active { display: block; }
+
+    /* SECTION HEADER */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-title { font-size: 18px; font-weight: 600; color: var(--text); }
+    .section-sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    /* STAT CARDS */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      transition: all 0.3s;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: var(--mono);
+      line-height: 1;
+      transition: all 0.3s;
+    }
+    .stat-change { font-size: 11px; color: var(--green); margin-top: 6px; }
+
+    /* TABLE */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title { font-size: 13px; font-weight: 500; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; font-family: var(--mono); }
+    .badge-green { background: rgba(16,185,129,0.12); color: var(--green); }
+    .badge-amber { background: rgba(245,158,11,0.12); color: var(--amber); }
+    .badge-red-accent { background: rgba(229,56,59,0.12); color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      padding: 10px 20px;
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+    td {
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .node-addr { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+    .rep-bar {
+      width: 80px; height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    .rep-fill { height: 100%; border-radius: 2px; background: var(--green); }
+    .rep-fill.low { background: var(--amber); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    /* FORM */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .form-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .form-body { padding: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .op-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .op-btn {
+      padding: 8px;
+      border-radius: 7px;
+      border: 1px solid var(--border2);
+      background: var(--bg);
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      font-family: var(--sans);
+    }
+    .op-btn:hover { border-color: var(--accent); color: var(--text); }
+    .op-btn.selected {
+      border-color: var(--accent);
+      background: rgba(229,56,59,0.1);
+      color: var(--accent);
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: var(--sans);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .submit-btn:hover { background: var(--accent2); }
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .submit-btn.loading {
+      background: var(--accent2);
+    }
+
+    /* SPINNER */
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    .submit-btn.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* JOB FEED */
+    .job-feed-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .job-feed-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .job-feed-body { padding: 0 20px; max-height: 480px; overflow-y: auto; }
+    .job-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+    .job-item:last-child { border-bottom: none; }
+    .job-item.new-job {
+      animation: slideIn 0.4s ease-out;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .job-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .job-dot.computing { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .job-info { flex: 1; }
+    .job-id { font-family: var(--mono); font-size: 12px; color: var(--text); }
+    .job-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .job-result { font-family: var(--mono); font-size: 12px; min-width: 80px; text-align: right; }
+    .job-result.success { color: var(--green); }
+    .job-result.computing { color: var(--accent); }
+    .job-result.slashed { color: var(--red); }
+    .job-result.psi { color: var(--green); }
+
+    /* PROGRESS BAR for computing jobs */
+    .job-progress {
+      width: 100%;
+      height: 2px;
+      background: var(--border2);
+      border-radius: 1px;
+      margin-top: 6px;
+      overflow: hidden;
+      display: none;
+    }
+    .job-progress.show { display: block; }
+    .job-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 1px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* STEP INDICATOR */
+    .job-steps {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 4px;
+      display: none;
+    }
+    .job-steps.show { display: block; }
+
+    /* PROOF EXPLORER */
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 13px;
+      color: var(--text);
+      font-family: var(--mono);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-btn {
+      padding: 11px 20px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--sans);
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .search-btn:hover { background: var(--accent2); }
+    .proof-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .proof-hero {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .proof-status-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+      background: rgba(16,185,129,0.12);
+    }
+    .proof-title { font-size: 15px; font-weight: 500; }
+    .proof-sub { font-size: 12px; color: var(--text2); margin-top: 3px; font-family: var(--mono); }
+    .proof-grid { display: grid; grid-template-columns: 1fr 1fr; }
+    .proof-field {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .proof-field:nth-child(2n) { border-right: none; }
+    .proof-field:nth-last-child(-n+2) { border-bottom: none; }
+    .proof-field-label {
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+    .proof-field-value { font-size: 13px; font-family: var(--mono); word-break: break-all; }
+    .checks-list { padding: 16px 20px; }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    /* NETWORK GRAPH */
+    .graph-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      height: 340px;
+      overflow: hidden;
+    }
+    .graph-node {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .graph-node-circle {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500;
+      font-family: var(--mono);
+      border: 2px solid;
+      transition: all 0.5s;
+    }
+    .graph-node-circle.active {
+      background: rgba(16,185,129,0.1);
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow: 0 0 16px rgba(16,185,129,0.2);
+    }
+    .graph-node-circle.computing {
+      background: rgba(229,56,59,0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 16px rgba(229,56,59,0.2);
+    }
+    .graph-node-label { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+    .legend-row { display: flex; gap: 20px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* LIVE INDICATOR */
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text);
+      display: none; z-index: 9999;
+      max-width: 320px;
+      font-family: var(--mono);
+    }
+    .toast.show { display: block; }
+
+    @media(max-width:768px){
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="logo" href="index.html">
+    <svg class="logo-icon" viewBox="0 0 26 26" fill="none">
+      <rect width="26" height="26" rx="6" fill="#150303"/>
+      <polygon points="13,2 21,7 21,19 13,24 5,19 5,7" fill="none" stroke="#E5383B" stroke-width="1.5"/>
+      <circle cx="13" cy="13" r="2" fill="#E5383B"/>
+      <circle cx="13" cy="2" r="1.2" fill="#E5383B"/>
+      <circle cx="21" cy="7" r="1.2" fill="#E5383B"/>
+      <circle cx="21" cy="19" r="1.2" fill="#E5383B"/>
+      <circle cx="13" cy="24" r="1.2" fill="#E5383B"/>
+      <circle cx="5" cy="19" r="1.2" fill="#E5383B"/>
+      <circle cx="5" cy="7" r="1.2" fill="#E5383B"/>
+    </svg>
+    <span class="logo-text">MPC&middot;NETWORK</span>
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPanel('nodes',this)">Node Monitor</button>
+    <button class="nav-tab" onclick="showPanel('jobs',this)">Job Submission</button>
+    <button class="nav-tab" onclick="showPanel('proofs',this)">Proof Explorer</button>
+    <button class="nav-tab" onclick="showPanel('graph',this)">Network Graph</button>
+  </div>
+  <div class="nav-right">
+    <div class="status-dot"></div>
+    <span class="status-text">Network live</span>
+    <span class="block-badge" id="block-num">Block #48,291</span>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- NODE MONITOR -->
+  <div class="panel active" id="panel-nodes">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Node Monitor</div>
+        <div class="section-sub">Real-time status of all active MPC nodes</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Active Nodes</div>
+        <div class="stat-value" id="stat-nodes">7</div>
+        <div class="stat-change">&#8593; 2 since yesterday</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Staked</div>
+        <div class="stat-value" id="stat-staked" style="font-size:22px">84,500</div>
+        <div class="stat-change" style="color:var(--text2)">MPCT locked</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Jobs Today</div>
+        <div class="stat-value" id="stat-jobs">142</div>
+        <div class="stat-change" id="stat-jobs-change">&#8593; 18% vs yesterday</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Reputation</div>
+        <div class="stat-value">87</div>
+        <div class="stat-change" style="color:var(--text2)">out of 100</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <span class="table-title">All Nodes</span>
+        <span class="badge badge-green">7 online</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Node Address</th>
+            <th>Status</th>
+            <th>Staked (MPCT)</th>
+            <th>Reputation</th>
+            <th>Jobs Done</th>
+            <th>Uptime</th>
+          </tr>
+        </thead>
+        <tbody id="node-table-body">
+          <tr><td><span class="node-addr">0x3f4a&hellip;8b2c</span></td><td><span class="badge badge-green">Active</span></td><td>15,000</td><td><span class="rep-bar"><span class="rep-fill" style="width:97%"></span></span>97</td><td id="node1-jobs">1,842</td><td style="color:var(--text2)">99.9%</td></tr>
+          <tr><td><span class="node-addr">0x7c1e&hellip;3d90</span></td><td><span class="badge badge-green">Active</span></td><td>12,000</td><td><span class="rep-bar"><span class="rep-fill" style="width:91%"></span></span>91</td><td id="node2-jobs">1,204</td><td style="color:var(--text2)">99.7%</td></tr>
+          <tr><td><span class="node-addr">0xa2f9&hellip;1c44</span></td><td><span class="badge badge-red-accent" id="node3-status">Computing</span></td><td>18,500</td><td><span class="rep-bar"><span class="rep-fill" style="width:88%"></span></span>88</td><td id="node3-jobs">983</td><td style="color:var(--text2)">98.4%</td></tr>
+          <tr><td><span class="node-addr">0x5b8d&hellip;7f21</span></td><td><span class="badge badge-red-accent" id="node4-status">Computing</span></td><td>10,000</td><td><span class="rep-bar"><span class="rep-fill" style="width:84%"></span></span>84</td><td id="node4-jobs">741</td><td style="color:var(--text2)">97.1%</td></tr>
+          <tr><td><span class="node-addr">0x9e3c&hellip;2a18</span></td><td><span class="badge badge-green">Active</span></td><td>9,000</td><td><span class="rep-bar"><span class="rep-fill" style="width:79%"></span></span>79</td><td id="node5-jobs">512</td><td style="color:var(--text2)">96.8%</td></tr>
+          <tr><td><span class="node-addr">0x1d7b&hellip;5e33</span></td><td><span class="badge badge-amber">Low Stake</span></td><td>8,000</td><td><span class="rep-bar"><span class="rep-fill low" style="width:72%"></span></span>72</td><td id="node6-jobs">389</td><td style="color:var(--text2)">94.2%</td></tr>
+          <tr><td><span class="node-addr">0x6f2a&hellip;9b07</span></td><td><span class="badge badge-green">Active</span></td><td>12,000</td><td><span class="rep-bar"><span class="rep-fill" style="width:95%"></span></span>95</td><td id="node7-jobs">671</td><td style="color:var(--text2)">99.5%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JOB SUBMISSION -->
+  <div class="panel" id="panel-jobs">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Job Submission</div>
+        <div class="section-sub">Submit a privacy-preserving computation to the network</div>
+      </div>
+    </div>
+    <div class="two-col">
+
+      <!-- FORM -->
+      <div class="form-card">
+        <div class="form-header">New computation job</div>
+        <div class="form-body">
+          <div class="form-group">
+            <label class="form-label">Operation</label>
+            <div class="op-grid">
+              <div class="op-btn selected" onclick="selectOp(this,'Sum')">Sum</div>
+              <div class="op-btn" onclick="selectOp(this,'Average')">Average</div>
+              <div class="op-btn" onclick="selectOp(this,'Product')">Product</div>
+              <div class="op-btn" onclick="selectOp(this,'Max')">Max</div>
+              <div class="op-btn" onclick="selectOp(this,'Min')">Min</div>
+              <div class="op-btn" onclick="selectOp(this,'PSI')">PSI</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of parties</label>
+            <input class="form-input" type="number" value="3" min="2" max="10" id="input-parties">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your private input</label>
+            <input class="form-input" type="number" placeholder="e.g. 85000" id="private-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Input data hash (IPFS)</label>
+            <input class="form-input" type="text" placeholder="QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx" id="input-hash">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fee (MPCT)</label>
+            <input class="form-input" type="number" value="100" min="10" id="input-fee">
+          </div>
+          <button class="submit-btn" id="submit-btn" onclick="submitJob()">
+            <div class="spinner" id="spinner"></div>
+            <span id="submit-label">Submit job to network &rarr;</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- JOB FEED -->
+      <div class="job-feed-wrap">
+        <div class="job-feed-header">
+          <span>Recent jobs</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">
+            <span class="live-dot"></span>LIVE
+          </span>
+        </div>
+        <div class="job-feed-body" id="job-feed">
+          <!-- jobs injected here by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PROOF EXPLORER -->
+  <div class="panel" id="panel-proofs">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Proof Explorer</div>
+        <div class="section-sub">Verify any ZK proof on-chain by job ID</div>
+      </div>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" type="text" placeholder="Enter job ID  e.g.  job-4f2a8c1d" id="proof-search" value="job-4f2a8c1d">
+      <button class="search-btn" onclick="lookupProof()">Verify proof &rarr;</button>
+    </div>
+    <div class="proof-card" id="proof-result">
+      <div class="proof-hero">
+        <div class="proof-status-icon">&#10003;</div>
+        <div>
+          <div class="proof-title" id="proof-title">Proof valid &mdash; computation verified on-chain</div>
+          <div class="proof-sub" id="proof-sub">job-4f2a8c1d &middot; Party 1 of 3 &middot; Block #48,284</div>
+        </div>
+        <span class="badge badge-green" id="proof-badge" style="margin-left:auto">Verified</span>
+      </div>
+      <div class="proof-grid">
+        <div class="proof-field"><div class="proof-field-label">Trace Commitment</div><div class="proof-field-value" id="proof-commitment">a3f4b2c1d8e9f0a1b2c3d4e5f6a7b8c9</div></div>
+        <div class="proof-field"><div class="proof-field-label">Fiat-Shamir Challenge</div><div class="proof-field-value" id="proof-challenge">7,294,103,847,291,038</div></div>
+        <div class="proof-field"><div class="proof-field-label">Operation</div><div class="proof-field-value" id="proof-op">Average</div></div>
+        <div class="proof-field"><div class="proof-field-label">Public Output</div><div class="proof-field-value" id="proof-output">85,000 MPCT</div></div>
+        <div class="proof-field"><div class="proof-field-label">Merkle Queries</div><div class="proof-field-value">4 positions verified</div></div>
+        <div class="proof-field"><div class="proof-field-label">Proof Size</div><div class="proof-field-value">2.4 KB</div></div>
+      </div>
+      <div class="checks-list">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Verification checks</div>
+        <div class="check-item"><span style="color:var(--green)">&#10003;</span> Structure check passed</div>
+        <div class="check-item"><span style="color:var(--green)">&#10003;</span> Fiat-Shamir challenge verified</div>
+        <div class="check-item"><span style="color:var(--green)">&#10003;</span> All 4 Merkle proofs valid</div>
+        <div class="check-item"><span style="color:var(--green)">&#10003;</span> Addition constraint satisfied</div>
+        <div class="check-item"><span style="color:var(--green)">&#10003;</span> Public inputs consistent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NETWORK GRAPH -->
+  <div class="panel" id="panel-graph">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Network Graph</div>
+        <div class="section-sub">Live topology of the MPC node network</div>
+      </div>
+    </div>
+    <div class="graph-container">
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line id="line-12" stroke="rgba(229,56,59,0.4)" stroke-width="0.3" x1="50" y1="15" x2="19" y2="52"/>
+        <line id="line-13" stroke="rgba(229,56,59,0.4)" stroke-width="0.3" x1="50" y1="15" x2="81" y2="52"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="19" y1="52" x2="81" y2="52"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="19" y1="52" x2="29" y2="82"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="81" y1="52" x2="71" y2="82"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="29" y1="82" x2="71" y2="82"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="50" y1="15" x2="29" y2="82"/>
+        <line stroke="#222" stroke-width="0.2" stroke-dasharray="1 1" x1="50" y1="15" x2="71" y2="82"/>
+      </svg>
+      <div class="graph-node" style="left:50%;top:20px;transform:translateX(-50%)">
+        <div class="graph-node-circle computing" id="gnode1">N1</div>
+        <span class="graph-node-label">0x3f4a&hellip;8b2c</span>
+      </div>
+      <div class="graph-node" style="left:10%;top:42%">
+        <div class="graph-node-circle active" id="gnode2">N2</div>
+        <span class="graph-node-label">0x7c1e&hellip;3d90</span>
+      </div>
+      <div class="graph-node" style="right:10%;top:42%">
+        <div class="graph-node-circle active" id="gnode3">N3</div>
+        <span class="graph-node-label">0xa2f9&hellip;1c44</span>
+      </div>
+      <div class="graph-node" style="left:22%;bottom:24px">
+        <div class="graph-node-circle active" id="gnode4">N4</div>
+        <span class="graph-node-label">0x5b8d&hellip;7f21</span>
+      </div>
+      <div class="graph-node" style="right:22%;bottom:24px">
+        <div class="graph-node-circle active" id="gnode5">N5</div>
+        <span class="graph-node-label">0x9e3c&hellip;2a18</span>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 4px var(--green)"></div>Active node</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Computing</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#222"></div>Idle connection</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(229,56,59,0.4)"></div>Active job</div>
+    </div>
+    <div class="stats-row" style="margin-top:20px;margin-bottom:0">
+      <div class="stat-card"><div class="stat-label">Connections</div><div class="stat-value" style="font-size:24px">21</div><div class="stat-change" style="color:var(--text2)">fully meshed</div></div>
+      <div class="stat-card"><div class="stat-label">Active Jobs</div><div class="stat-value" style="font-size:24px" id="graph-active-jobs">3</div><div class="stat-change">across 2 pairs</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Latency</div><div class="stat-value" style="font-size:24px">14ms</div><div class="stat-change" style="color:var(--text2)">per MPC round</div></div>
+      <div class="stat-card"><div class="stat-label">ZK Proofs</div><div class="stat-value" style="font-size:24px" id="graph-proofs">142</div><div class="stat-change">all verified &#10003;</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var selectedOp = 'Sum';
+var jobsToday = 142;
+var totalProofs = 142;
+var activeJobs = 3;
+
+var jobFeed = [
+  { id: 'job-4f2a8c1d', op: 'Average', parties: 3, time: '2 min ago',  status: 'success', result: '85,000' },
+  { id: 'job-9b3e1f7a', op: 'Sum',     parties: 5, time: '8 min ago',  status: 'computing', result: 'Computing...' },
+  { id: 'job-2c7d4e9b', op: 'PSI',     parties: 2, time: '14 min ago', status: 'psi',     result: '3 matches' },
+  { id: 'job-8a1f3c6e', op: 'Product', parties: 3, time: '31 min ago', status: 'success', result: '1,240,000' },
+  { id: 'job-5e9b2d4f', op: 'Average', parties: 4, time: '47 min ago', status: 'slashed', result: 'Slashed' },
+];
+
+// ─────────────────────────────────────────────
+// RENDER JOB FEED
+// ─────────────────────────────────────────────
+function renderFeed() {
+  var feed = document.getElementById('job-feed');
+  feed.innerHTML = '';
+  jobFeed.forEach(function(job, i) {
+    var dotColor = job.status === 'success' || job.status === 'psi' ? 'var(--green)'
+                 : job.status === 'computing' ? 'var(--accent)'
+                 : 'var(--red)';
+    var resultClass = job.status === 'success' || job.status === 'psi' ? 'success'
+                    : job.status === 'computing' ? 'computing'
+                    : 'slashed';
+    var dotClass = job.status === 'computing' ? 'job-dot computing' : 'job-dot';
+
+    var progressBar = '';
+    var steps = '';
+    if (job.status === 'computing') {
+      progressBar = '<div class="job-progress show" id="progress-' + job.id + '"><div class="job-progress-fill" id="fill-' + job.id + '" style="width:' + (job.progress || 0) + '%"></div></div>';
+      steps = '<div class="job-steps show" id="steps-' + job.id + '">' + (job.step || 'Initializing...') + '</div>';
+    }
+
+    var el = document.createElement('div');
+    el.className = 'job-item' + (job.isNew ? ' new-job' : '');
+    el.id = 'job-' + job.id;
+    el.innerHTML =
+      '<div class="' + dotClass + '" style="background:' + dotColor + ';flex-shrink:0"></div>' +
+      '<div class="job-info">' +
+        '<div class="job-id">' + job.id + '</div>' +
+        '<div class="job-meta">' + job.op + ' &middot; ' + job.parties + ' parties &middot; ' + job.time + '</div>' +
+        progressBar +
+        steps +
+      '</div>' +
+      '<div class="job-result ' + resultClass + '">' + job.result + '</div>';
+    feed.appendChild(el);
+    job.isNew = false;
+  });
+}
+
+// ─────────────────────────────────────────────
+// SUBMIT JOB — FULLY DYNAMIC
+// ─────────────────────────────────────────────
+function submitJob() {
+  var input = document.getElementById('private-input').value;
+  var parties = parseInt(document.getElementById('input-parties').value) || 3;
+  var fee = document.getElementById('input-fee').value || '100';
+
+  if (!input) { showToast('&#9888; Enter your private input'); return; }
+
+  // Generate job ID
+  var jobId = 'job-' + Math.random().toString(36).substr(2, 8);
+  var shortId = jobId;
+
+  // Disable button and show spinner
+  var btn = document.getElementById('submit-btn');
+  var label = document.getElementById('submit-label');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  label.textContent = 'Submitting to network...';
+
+  showToast('&#128228; Job ' + shortId + ' submitted to JobRegistry');
+
+  setTimeout(function() {
+    // Add job to feed as computing
+    var newJob = {
+      id: shortId,
+      op: selectedOp,
+      parties: parties,
+      time: 'just now',
+      status: 'computing',
+      result: 'Computing...',
+      progress: 0,
+      step: 'Splitting secret shares...',
+      isNew: true
+    };
+    jobFeed.unshift(newJob);
+    renderFeed();
+
+    // Update stats
+    jobsToday++;
+    document.getElementById('stat-jobs').textContent = jobsToday;
+
+    // Update network graph — show nodes computing
+    document.getElementById('gnode1').className = 'graph-node-circle computing';
+    document.getElementById('gnode2').className = 'graph-node-circle computing';
+
+    // Reset button
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    label.textContent = 'Submit job to network \u2192';
+    document.getElementById('private-input').value = '';
+    document.getElementById('input-hash').value = '';
+
+    // Animate progress through MPC steps
+    var steps = [
+      { pct: 15, msg: 'Splitting secret shares...' },
+      { pct: 30, msg: 'Distributing shares to nodes...' },
+      { pct: 45, msg: 'Verifying MAC authentication tags...' },
+      { pct: 60, msg: 'Running SPDZ protocol...' },
+      { pct: 72, msg: 'Consuming Beaver triples...' },
+      { pct: 85, msg: 'Generating ZK proof...' },
+      { pct: 95, msg: 'Verifying proof on-chain...' },
+      { pct: 100, msg: 'Complete.' },
+    ];
+
+    var stepIndex = 0;
+    var interval = setInterval(function() {
+      if (stepIndex >= steps.length) {
+        clearInterval(interval);
+        // Job complete — compute result
+        var result = computeResult(selectedOp, parseInt(input), parties);
+        completeJob(shortId, result, selectedOp);
+        return;
+      }
+      var s = steps[stepIndex];
+      var fillEl = document.getElementById('fill-' + shortId);
+      var stepsEl = document.getElementById('steps-' + shortId);
+      if (fillEl) fillEl.style.width = s.pct + '%';
+      if (stepsEl) stepsEl.textContent = s.msg;
+      // Update the job in array
+      jobFeed[0].progress = s.pct;
+      jobFeed[0].step = s.msg;
+      stepIndex++;
+    }, 600);
+
+  }, 800);
+}
+
+// ─────────────────────────────────────────────
+// COMPUTE REALISTIC RESULT
+// ─────────────────────────────────────────────
+function computeResult(op, myInput, parties) {
+  // Simulate other parties' inputs
+  var inputs = [myInput];
+  for (var i = 1; i < parties; i++) {
+    inputs.push(Math.floor(Math.random() * 50000) + 60000);
+  }
+  var result;
+  if (op === 'Sum') {
+    result = inputs.reduce(function(a, b) { return a + b; }, 0);
+  } else if (op === 'Average') {
+    result = Math.floor(inputs.reduce(function(a, b) { return a + b; }, 0) / inputs.length);
+  } else if (op === 'Product') {
+    result = inputs.reduce(function(a, b) { return a * b; }, 1);
+  } else if (op === 'Max') {
+    result = Math.max.apply(null, inputs);
+  } else if (op === 'Min') {
+    result = Math.min.apply(null, inputs);
+  } else if (op === 'PSI') {
+    result = Math.floor(Math.random() * 5) + 1;
+    return result + ' matches';
+  }
+  return result.toLocaleString();
+}
+
+// ─────────────────────────────────────────────
+// COMPLETE JOB — update feed entry to success
+// ─────────────────────────────────────────────
+function completeJob(jobId, result, op) {
+  // Find and update in array
+  for (var i = 0; i < jobFeed.length; i++) {
+    if (jobFeed[i].id === jobId) {
+      jobFeed[i].status = op === 'PSI' ? 'psi' : 'success';
+      jobFeed[i].result = result;
+      jobFeed[i].time = 'just now';
+      jobFeed[i].step = '';
+      jobFeed[i].progress = 100;
+      break;
+    }
+  }
+  renderFeed();
+
+  // Update stats
+  totalProofs++;
+  activeJobs = Math.max(0, activeJobs - 1);
+  document.getElementById('graph-proofs').textContent = totalProofs;
+  document.getElementById('graph-active-jobs').textContent = activeJobs;
+
+  // Update node graph back to active
+  setTimeout(function() {
+    document.getElementById('gnode1').className = 'graph-node-circle active';
+    document.getElementById('gnode2').className = 'graph-node-circle active';
+  }, 500);
+
+  // Update proof explorer with this job
+  updateProofExplorer(jobId, op, result);
+
+  showToast('&#9989; Job ' + jobId + ' complete &mdash; ZK proof verified');
+}
+
+// ─────────────────────────────────────────────
+// UPDATE PROOF EXPLORER with latest job
+// ─────────────────────────────────────────────
+function updateProofExplorer(jobId, op, result) {
+  document.getElementById('proof-search').value = jobId;
+  document.getElementById('proof-title').textContent = 'Proof valid \u2014 computation verified on-chain';
+  document.getElementById('proof-sub').textContent = jobId + ' \u00b7 Party 1 of 3 \u00b7 Block #' + (48291 + jobsToday).toLocaleString();
+  document.getElementById('proof-commitment').textContent = randomHex(32);
+  document.getElementById('proof-challenge').textContent = (Math.floor(Math.random() * 9000000000000000) + 1000000000000000).toLocaleString();
+  document.getElementById('proof-op').textContent = op;
+  document.getElementById('proof-output').textContent = result + ' MPCT';
+  document.getElementById('proof-badge').textContent = 'Verified';
+  document.getElementById('proof-badge').className = 'badge badge-green';
+}
+
+function randomHex(len) {
+  var s = '';
+  var chars = '0123456789abcdef';
+  for (var i = 0; i < len; i++) {
+    s += chars[Math.floor(Math.random() * 16)];
+  }
+  return s;
+}
+
+// ─────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function selectOp(el, op) {
+  document.querySelectorAll('.op-btn').forEach(function(b) { b.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedOp = op;
+}
+
+function lookupProof() {
+  var id = document.getElementById('proof-search').value.trim();
+  if (!id) { showToast('&#9888; Enter a job ID'); return; }
+  showToast('&#10003; Proof verified for ' + id);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3500);
+}
+
+// Block counter
+var block = 48291;
+setInterval(function() {
+  document.getElementById('block-num').textContent = 'Block #' + (++block).toLocaleString();
+}, 8000);
+
+// Initialize feed on load
+renderFeed();
+</script>
+</body>
+</html>
