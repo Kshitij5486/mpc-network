@@ -2,5 +2,6 @@
 members = [
     "crypto",
     "node",
+    "zkproof",
 ]
 resolver = "2"
