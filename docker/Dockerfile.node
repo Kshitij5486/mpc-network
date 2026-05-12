@@ -1,0 +1,27 @@
+# ============================================
+# Dockerfile.node — MPC Network Node
+# ============================================
+FROM rust:1.75-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy workspace files
+COPY Cargo.toml ./
+COPY crypto/ ./crypto/
+COPY node/ ./node/
+COPY zkproof/ ./zkproof/
+
+# Build the node binary
+RUN cargo build --release -p mpc-node
+
+# Expose default MPC port
+EXPOSE 8001
+
+# Run the node
+CMD ["./target/release/mpc-node"]

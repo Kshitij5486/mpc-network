@@ -1,0 +1,65 @@
+# ============================================
+# docker-compose.yml — Run full MPC network
+# ============================================
+# Spins up 3 MPC nodes with one command:
+# docker-compose up
+# ============================================
+
+version: '3.8'
+
+services:
+
+  # ── MPC Node 1 ─────────────────────────
+  node1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    container_name: mpc-node-1
+    environment:
+      - PARTY_ID=1
+      - PARTY_COUNT=3
+      - LISTEN_ADDR=0.0.0.0:8001
+      - PEER_ADDRS=node2:8002,node3:8003
+      - RUST_LOG=info
+    ports:
+      - "8001:8001"
+    networks:
+      - mpc-network
+
+  # ── MPC Node 2 ─────────────────────────
+  node2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    container_name: mpc-node-2
+    environment:
+      - PARTY_ID=2
+      - PARTY_COUNT=3
+      - LISTEN_ADDR=0.0.0.0:8002
+      - PEER_ADDRS=node1:8001,node3:8003
+      - RUST_LOG=info
+    ports:
+      - "8002:8002"
+    networks:
+      - mpc-network
+
+  # ── MPC Node 3 ─────────────────────────
+  node3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    container_name: mpc-node-3
+    environment:
+      - PARTY_ID=3
+      - PARTY_COUNT=3
+      - LISTEN_ADDR=0.0.0.0:8003
+      - PEER_ADDRS=node1:8001,node2:8002
+      - RUST_LOG=info
+    ports:
+      - "8003:8003"
+    networks:
+      - mpc-network
+
+networks:
+  mpc-network:
+    driver: bridge
