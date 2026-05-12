@@ -1,36 +1,16 @@
 // ============================================
 // utils.rs — ZK Proof Utilities
 // ============================================
-// Helper functions used across the ZK proof system.
-//
-// In a full ZK-STARK implementation these would
-// use finite field arithmetic over a STARK-friendly
-// prime. Here we implement the structure and
-// interfaces that connect to the Winterfell library
-// (which we integrate in the prover module).
-//
-// What this file provides:
-// - Hashing utilities (SHA-256 based commitments)
-// - Merkle tree for proof data structures
-// - Field element serialization
-// - Transcript for Fiat-Shamir heuristic
-// ============================================
 
 use sha2::{Sha256, Digest};
 use serde::{Serialize, Deserialize};
 
-// ============================================
-// hash_bytes — SHA-256 hash of raw bytes
-// ============================================
 pub fn hash_bytes(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hasher.finalize().into()
 }
 
-// ============================================
-// hash_two — hash two 32-byte values together
-// ============================================
 pub fn hash_two(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(left);
@@ -38,16 +18,10 @@ pub fn hash_two(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
     hasher.finalize().into()
 }
 
-// ============================================
-// hash_u64 — hash a u64 value
-// ============================================
 pub fn hash_u64(value: u64) -> [u8; 32] {
     hash_bytes(&value.to_le_bytes())
 }
 
-// ============================================
-// hash_field_elements — hash a slice of u64s
-// ============================================
 pub fn hash_field_elements(elements: &[u64]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     for elem in elements {
@@ -55,15 +29,6 @@ pub fn hash_field_elements(elements: &[u64]) -> [u8; 32] {
     }
     hasher.finalize().into()
 }
-
-// ============================================
-// MerkleTree — binary hash tree for commitments
-// ============================================
-// Used to commit to a set of values in a way
-// that allows efficient membership proofs.
-// Any single element can be proven to be in
-// the tree with O(log n) hashes.
-// ============================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MerkleTree {
@@ -73,11 +38,9 @@ pub struct MerkleTree {
 }
 
 impl MerkleTree {
-    // Build a Merkle tree from leaf values
     pub fn new(leaf_values: &[u64]) -> Self {
         assert!(!leaf_values.is_empty(), "MerkleTree: no leaves");
 
-        // Hash each leaf value
         let leaves: Vec<[u8; 32]> = leaf_values
             .iter()
             .map(|&v| hash_u64(v))
@@ -86,13 +49,11 @@ impl MerkleTree {
         let depth = (leaves.len() as f64).log2().ceil() as usize;
         let mut nodes = leaves.clone();
 
-        // Pad to power of 2
         let target_size = 1 << depth;
         while nodes.len() < target_size {
             nodes.push([0u8; 32]);
         }
 
-        // Build tree bottom-up
         let mut level = nodes.clone();
         let mut all_nodes = level.clone();
 
@@ -118,17 +79,14 @@ impl MerkleTree {
         }
     }
 
-    // Get the root commitment
     pub fn root(&self) -> [u8; 32] {
         *self.nodes.last().unwrap_or(&[0u8; 32])
     }
 
-    // Get root as hex string
     pub fn root_hex(&self) -> String {
         hex::encode(self.root())
     }
 
-    // Generate a membership proof for leaf at index
     pub fn proof(&self, index: usize) -> MerkleProof {
         let mut siblings = Vec::new();
         let mut current = index;
@@ -145,7 +103,9 @@ impl MerkleTree {
             };
 
             if sibling < level_start + level_size {
-                siblings.push(self.nodes[level_start + sibling % level_size]);
+                siblings.push(
+                    self.nodes[level_start + sibling % level_size]
+                );
             } else {
                 siblings.push([0u8; 32]);
             }
@@ -163,7 +123,6 @@ impl MerkleTree {
         }
     }
 
-    // Verify a membership proof
     pub fn verify_proof(proof: &MerkleProof) -> bool {
         let mut current = proof.leaf;
         let mut index = proof.index;
@@ -181,30 +140,14 @@ impl MerkleTree {
     }
 }
 
-// ============================================
-// MerkleProof — proof of membership in a tree
-// ============================================
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+// PartialEq added here — needed by prover tests
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MerkleProof {
     pub index: usize,
     pub leaf: [u8; 32],
     pub siblings: Vec<[u8; 32]>,
     pub root: [u8; 32],
 }
-
-// ============================================
-// Transcript — Fiat-Shamir heuristic
-// ============================================
-// Converts interactive proofs to non-interactive
-// ones by generating challenges deterministically
-// from the transcript of messages so far.
-//
-// In ZK-STARKs, the verifier's random challenges
-// are replaced by hash outputs of the transcript.
-// This makes the proof non-interactive and
-// publicly verifiable without a trusted setup.
-// ============================================
 
 #[derive(Debug, Clone)]
 pub struct Transcript {
@@ -218,36 +161,27 @@ impl Transcript {
         }
     }
 
-    // Absorb data into the transcript
     pub fn absorb(&mut self, data: &[u8]) {
         self.state.extend_from_slice(data);
     }
 
-    // Absorb a u64 value
     pub fn absorb_u64(&mut self, value: u64) {
         self.state.extend_from_slice(&value.to_le_bytes());
     }
 
-    // Absorb a hash commitment
     pub fn absorb_hash(&mut self, hash: &[u8; 32]) {
         self.state.extend_from_slice(hash);
     }
 
-    // Squeeze a challenge value
     pub fn squeeze_challenge(&self) -> u64 {
         let hash = hash_bytes(&self.state);
         u64::from_le_bytes(hash[..8].try_into().unwrap())
     }
 
-    // Squeeze a challenge hash
     pub fn squeeze_hash(&self) -> [u8; 32] {
         hash_bytes(&self.state)
     }
 }
-
-// ============================================
-// TESTS
-// ============================================
 
 #[cfg(test)]
 mod tests {
@@ -343,7 +277,6 @@ mod tests {
     fn test_merkle_proof_tampered_fails() {
         let tree = MerkleTree::new(&[10, 20, 30, 40]);
         let mut proof = tree.proof(0);
-        // Tamper with the leaf hash
         proof.leaf = hash_u64(999);
         assert!(!MerkleTree::verify_proof(&proof));
     }
