@@ -3,6 +3,14 @@ name = "mpc-zkproof"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "mpc_zkproof"
+path = "src/lib.rs"
+
+[[bin]]
+name = "causal-prover"
+path = "src/causal_prover.rs"
+
 [dependencies]
 mpc-crypto = { path = "../crypto" }
 sha2 = "0.10"
